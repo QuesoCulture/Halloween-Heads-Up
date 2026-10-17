@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Halloween Heads Up</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top, #42105c 0%, #180822 42%, #08040c 100%);
+      color: white;
+      font-family: Arial, Helvetica, sans-serif;
+      text-align: center;
+    }
+
+    .screen {
+      min-height: 100vh;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .active {
+      display: flex;
+    }
+
+    h1 {
+      color: #ff7a00;
+      font-size: clamp(2.4rem, 8vw, 5rem);
+      margin: 0 0 8px;
+    }
+
+    h2 {
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+    }
+
+    .subtitle {
+      color: #d5c8db;
+      margin-bottom: 28px;
+    }
+
+    .deck-grid {
+      width: min(700px, 100%);
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 18px;
+      padding: 20px 16px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .deck {
+      background: #2b1735;
+      color: white;
+      border: 2px solid #643778;
+    }
+
+    .deck:hover {
+      background: #442151;
+    }
+
+    .mix {
+      grid-column: 1 / -1;
+      background: #ff7a00;
+      color: #16081d;
+    }
+
+    .settings {
+      margin-top: 26px;
+    }
+
+    .settings button {
+      background: #3b2444;
+      color: white;
+      margin: 5px;
+      padding: 12px 18px;
+    }
+
+    .settings button.selected {
+      background: #ff7a00;
+      color: #180822;
+    }
+
+    #cardCategory {
+      color: #ff9d3d;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+
+    #cardText {
+      font-size: clamp(2.5rem, 10vw, 6rem);
+      line-height: 1;
+      margin: 20px 0 40px;
+      max-width: 1000px;
+    }
+
+    .game-info {
+      display: flex;
+      gap: 35px;
+      margin-bottom: 30px;
+      font-size: 1.4rem;
+      font-weight: bold;
+    }
+
+    .controls {
+      width: min(650px, 100%);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .pass {
+      background: #672733;
+      color: white;
+    }
+
+    .correct {
+      background: #36b45c;
+      color: white;
+    }
+
+    .start {
+      background: #ff7a00;
+      color: #16081d;
+      width: min(400px, 90%);
+      margin-top: 20px;
+    }
+
+    #resultsList {
+      text-align: left;
+      width: min(500px, 100%);
+      max-height: 45vh;
+      overflow-y: auto;
+      margin: 15px auto;
+    }
+
+    .result {
+      padding: 10px;
+      border-bottom: 1px solid #55315f;
+    }
+
+    @media (max-width: 600px) {
+      .deck-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .mix {
+        grid-column: 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HOME SCREEN -->
+  <section id="home" class="screen active">
+    <h1>🎃 Halloween Heads Up</h1>
+    <p class="subtitle">Pick a deck. Grab the phone. Don't get scared.</p>
+
+    <div class="deck-grid">
+      <button class="deck" onclick="chooseDeck('movies')">🎬 Movies</button>
+      <button class="deck" onclick="chooseDeck('characters')">🔪 Characters</button>
+      <button class="deck" onclick="chooseDeck('charades')">🎭 Act It Out</button>
+      <button class="deck" onclick="chooseDeck('wildcard')">👻 Wild Card</button>
+      <button class="mix" onclick="chooseDeck('everything')">🎲 EVERYTHING</button>
+    </div>
+
+    <div class="settings">
+      <h2>Round Length</h2>
+      <button onclick="setTime(30, this)">30 sec</button>
+      <button class="selected" onclick="setTime(60, this)">60 sec</button>
+      <button onclick="setTime(90, this)">90 sec</button>
+    </div>
+  </section>
+
+
+  <!-- READY SCREEN -->
+  <section id="ready" class="screen">
+    <h1 id="readyTitle">🎃 Ready?</h1>
+    <h2>Put the phone where the player can't see the answer.</h2>
+    <p class="subtitle">Everyone else describes it. For Act It Out, no talking!</p>
+
+    <button class="start" onclick="startGame()">START ROUND</button>
+    <button class="deck" style="margin-top:12px;" onclick="showScreen('home')">
+      Change Deck
+    </button>
+  </section>
+
+
+  <!-- GAME SCREEN -->
+  <section id="game" class="screen">
+    <div id="cardCategory">MOVIE</div>
+
+    <div class="game-info">
+      <span>⏱ <span id="timer">60</span></span>
+      <span>✅ <span id="score">0</span></span>
+    </div>
+
+    <div id="cardText">SCREAM</div>
+
+    <div class="controls">
+      <button class="pass" onclick="answer(false)">❌ PASS</button>
+      <button class="correct" onclick="answer(true)">✅ GOT IT!</button>
+    </div>
+  </section>
+
+
+  <!-- RESULTS SCREEN -->
+  <section id="results" class="screen">
+    <h1>🎃 Round Over!</h1>
+    <h2>You got <span id="finalScore">0</span> correct</h2>
+
+    <div id="resultsList"></div>
+
+    <button class="start" onclick="playAgain()">PLAY AGAIN</button>
+    <button class="deck" style="margin-top:12px;" onclick="showScreen('home')">
+      Choose Another Deck
+    </button>
+  </section>
+
+
+<script>
+
+const decks = {
+
+  movies: [
+    "Obsession",
+    "Sinners",
+    "Weapons",
+    "Companion",
+    "The Substance",
+    "Longlegs",
+    "Smile",
+    "M3GAN",
+    "Talk to Me",
+    "Barbarian",
+    "Nope",
+    "Get Out",
+    "Us",
+    "A Quiet Place",
+    "The Black Phone",
+    "Terrifier",
+    "Five Nights at Freddy's",
+    "It",
+    "The Conjuring",
+    "Hereditary",
+    "Ready or Not",
+    "Happy Death Day",
+    "The Invisible Man",
+    "Final Destination",
+    "Halloween",
+    "Scream",
+    "Friday the 13th",
+    "The Exorcist",
+    "The Shining",
+    "The Texas Chainsaw Massacre",
+    "Child's Play",
+    "Saw",
+    "The Ring",
+    "The Blair Witch Project",
+    "The Sixth Sense",
+    "The Silence of the Lambs",
+    "The Grudge",
+    "Paranormal Activity",
+    "Hocus Pocus",
+    "Beetlejuice",
+    "The Nightmare Before Christmas",
+    "Edward Scissorhands",
+    "The Addams Family",
+    "Coraline",
+    "Casper",
+    "Halloweentown",
+    "Scary Movie",
+    "Ghostbusters",
+    "Scooby-Doo",
+    "Trick 'r Treat"
+  ],
+
+  characters: [
+    "Ghostface",
+    "Michael Myers",
+    "Jason Voorhees",
+    "Freddy Krueger",
+    "Chucky",
+    "Pennywise",
+    "Art the Clown",
+    "M3GAN",
+    "Jigsaw",
+    "Billy the Puppet",
+    "Leatherface",
+    "Hannibal Lecter",
+    "Carrie",
+    "The Nun",
+    "Annabelle",
+    "The Babadook",
+    "The Grabber",
+    "Pearl",
+    "Freddy Fazbear",
+    "Springtrap",
+    "The Demogorgon",
+    "Vecna",
+    "Wednesday Addams",
+    "Morticia Addams",
+    "Uncle Fester",
+    "Beetlejuice",
+    "Lydia Deetz",
+    "Edward Scissorhands",
+    "Jack Skellington",
+    "Sally",
+    "Oogie Boogie",
+    "The Headless Horseman",
+    "The Wicked Witch",
+    "The Sanderson Sisters",
+    "Casper",
+    "Frankenstein's Monster",
+    "Dracula",
+    "The Bride of Frankenstein",
+    "The Invisible Man",
+    "The Wolf Man",
+    "The Grim Reaper",
+    "Slender Man",
+    "The Other Mother",
+    "Sam from Trick 'r Treat",
+    "Xenomorph",
+    "Predator",
+    "Regan",
+    "Scooby-Doo",
+    "Velma",
+    "Wednesday"
+  ],
+
+  charades: [
+    "Carving a pumpkin",
+    "Trick-or-treating",
+    "Walking like a zombie",
+    "Running from a killer",
+    "Being chased by a ghost",
+    "Riding a broomstick",
+    "Casting a spell",
+    "Turning into a werewolf",
+    "Getting bitten by a vampire",
+    "Rising from a coffin",
+    "Wrapping yourself like a mummy",
+    "Getting possessed",
+    "Performing an exorcism",
+    "Walking through a spiderweb",
+    "Seeing a ghost",
+    "Hearing a noise downstairs",
+    "Hiding under the bed",
+    "Hiding in a closet",
+    "Running upstairs from the killer",
+    "Checking behind the shower curtain",
+    "Opening a creepy door",
+    "Walking through a haunted house",
+    "Using a Ouija board",
+    "Summoning a demon",
+    "Digging a grave",
+    "Escaping from a coffin",
+    "Being dragged under the bed",
+    "Being chased with a chainsaw",
+    "Getting turned into a zombie",
+    "Pretending you're not scared",
+    "Realizing someone's behind you",
+    "Jumping at a jump scare",
+    "Dropping your keys while running away",
+    "Your flashlight stops working",
+    "Your car won't start",
+    "Your phone dies",
+    "Sneaking past a sleeping monster",
+    "Fighting off a zombie",
+    "Barricading a door",
+    "Taking a selfie with a ghost",
+    "Putting on a Halloween costume",
+    "Bobbing for apples",
+    "TP'ing a house",
+    "Scaring a trick-or-treater",
+    "Stealing someone's Halloween candy",
+    "Eating extremely sour candy",
+    "Dancing like a skeleton",
+    "Doing the Wednesday dance",
+    "Being a creepy doll",
+    "Pretending to be possessed"
+  ],
+
+  wildcard: [
+    "Haunted house",
+    "Ouija board",
+    "Jump scare",
+    "Final girl",
+    "Chainsaw",
+    "Coffin",
+    "Cemetery",
+    "Tombstone",
+    "Candy corn",
+    "Pumpkin spice",
+    "Jack-o'-lantern",
+    "Fake blood",
+    "Creepy clown",
+    "Haunted doll",
+    "Bloody Mary",
+    "Sleep paralysis",
+    "Zombie apocalypse",
+    "Vampire bite",
+    "Full moon",
+    "Silver bullet",
+    "Holy water",
+    "Exorcism",
+    "Possession",
+    "Séance",
+    "Cursed object",
+    "Paranormal activity",
+    "Found footage",
+    "Serial killer",
+    "Abandoned hospital",
+    "Abandoned asylum",
+    "Cabin in the woods",
+    "Creepy basement",
+    "Corn maze",
+    "The Backrooms",
+    "True crime",
+    "Spirit Halloween",
+    "Halloween party",
+    "Costume contest",
+    "Trick-or-treat",
+    "Pumpkin patch",
+    "Fog machine",
+    "Black cat",
+    "Scarecrow",
+    "Spiderweb",
+    "Witch's cauldron",
+    "Voodoo doll",
+    "Monster under the bed",
+    "Killer hiding in the closet",
+    "The call is coming from inside the house",
+    "Halloween candy"
+  ]
+};
+
+
+let selectedDeck = "everything";
+let roundLength = 60;
+let timeRemaining = 60;
+let score = 0;
+let timerInterval;
+let roundCards = [];
+let cardIndex = 0;
+let roundResults = [];
+
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(screen => {
+    screen.classList.remove("active");
+  });
+
+  document.getElementById(id).classList.add("active");
+}
+
+
+function setTime(seconds, button) {
+  roundLength = seconds;
+
+  document.querySelectorAll(".settings button").forEach(btn => {
+    btn.classList.remove("selected");
+  });
+
+  button.classList.add("selected");
+}
+
+
+function chooseDeck(deck) {
+  selectedDeck = deck;
+
+  const titles = {
+    movies: "🎬 Movies",
+    characters: "🔪 Characters",
+    charades: "🎭 Act It Out",
+    wildcard: "👻 Wild Card",
+    everything: "🎲 Everything"
+  };
+
+  document.getElementById("readyTitle").textContent = titles[deck];
+  showScreen("ready");
+}
+
+
+function shuffle(array) {
+  const copy = [...array];
+
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+
+  return copy;
+}
+
+
+function buildRoundCards() {
+
+  if (selectedDeck === "everything") {
+
+    roundCards = [];
+
+    Object.keys(decks).forEach(category => {
+      decks[category].forEach(text => {
+        roundCards.push({
+          text,
+          category
+        });
+      });
+    });
+
+  } else {
+
+    roundCards = decks[selectedDeck].map(text => ({
+      text,
+      category: selectedDeck
+    }));
+
+  }
+
+  roundCards = shuffle(roundCards);
+}
+
+
+function startGame() {
+  score = 0;
+  cardIndex = 0;
+  roundResults = [];
+  timeRemaining = roundLength;
+
+  document.getElementById("score").textContent = score;
+  document.getElementById("timer").textContent = timeRemaining;
+
+  buildRoundCards();
+  showScreen("game");
+  showCard();
+
+  clearInterval(timerInterval);
+
+  timerInterval = setInterval(() => {
+    timeRemaining--;
+    document.getElementById("timer").textContent = timeRemaining;
+
+    if (timeRemaining <= 0) {
+      endRound();
+    }
+  }, 1000);
+}
+
+
+function showCard() {
+
+  if (cardIndex >= roundCards.length) {
+    roundCards = shuffle(roundCards);
+    cardIndex = 0;
+  }
+
+  const card = roundCards[cardIndex];
+
+  const categoryNames = {
+    movies: "🎬 MOVIE",
+    characters: "🔪 CHARACTER",
+    charades: "🎭 ACT IT OUT",
+    wildcard: "👻 WILD CARD"
+  };
+
+  document.getElementById("cardText").textContent = card.text;
+  document.getElementById("cardCategory").textContent =
+    categoryNames[card.category];
+}
+
+
+function answer(correct) {
+
+  if (timeRemaining <= 0) return;
+
+  const card = roundCards[cardIndex];
+
+  roundResults.push({
+    text: card.text,
+    correct
+  });
+
+  if (correct) {
+    score++;
+    document.getElementById("score").textContent = score;
+  }
+
+  cardIndex++;
+  showCard();
+}
+
+
+function endRound() {
+
+  clearInterval(timerInterval);
+
+  document.getElementById("finalScore").textContent = score;
+
+  const list = document.getElementById("resultsList");
+  list.innerHTML = "";
+
+  roundResults.forEach(result => {
+    const row = document.createElement("div");
+    row.className = "result";
+
+    row.textContent =
+      (result.correct ? "✅ " : "❌ ") + result.text;
+
+    list.appendChild(row);
+  });
+
+  showScreen("results");
+}
+
+
+function playAgain() {
+  showScreen("ready");
+}
+
+</script>
+
+</body>
+</html>
